@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Narcotics Diversion Calculator – Remaining Volume (Prisma Theme)</title>
+
+<style>
+/* ================================
+   Prisma Health Color System
+   ================================ */
+:root {
+  /* Prisma brand swatches (from your guide) */
+  --prisma-lemon:   #FFD600; /* Lemon */
+  --prisma-tangerine:#F99B1C; /* Tangerine */
+  --prisma-apricot: #F15F22; /* Apricot */
+  --prisma-rubine:  #ED1849; /* Rubine */
+  --prisma-fuchsia: #EC008C; /* Fuchsia */
+  --prisma-plum:    #832B72; /* Plum */
+  --prisma-eggplant:#3B0065; /* Eggplant */
+  --prisma-85black: #262626; /* 85% Black */
+  --prisma-black:   #000000; /* Black */
+  --prisma-white:   #FFFFFF; /* White */
+
+  /* Light theme tokens */
+  --bg: #FAFBFC;
+  --text: #1F2937;
+  --muted: #4B5563;
+  --panel: #FFFFFF;
+  --border: #E5E7EB;
+
+  --primary: var(--prisma-rubine);
+  --primary-contrast: #FFFFFF;
+  --primary-hover: #D11541;
+
+  --secondary: var(--prisma-plum);
+  --secondary-hover: #6E215F;
+
+  --success: #1C7C3E;
+  --warning: #B45309;
+  --danger:  #B91C1C;
+
+  --info-bg: #F5F7FF;
+  --ok-bg: #ECFDF5;
+  --warn-bg: #FFF7ED;
+  --err-bg: #FFF1F2;
+
+  --focus-ring: rgba(237, 24, 73, 0.16);
+
+  --tab-idle-bg: #F4F6FB;
+  --tab-idle-fg: var(--muted);
+
+  --phrase-row-bg: #FFF7FB;
+  --phrase-row-bd: #FFE0EA;
+
+  --composer-bg: #F8F7FF;
+
+  --header-gradient: linear-gradient(
+    96deg,
+    var(--prisma-lemon) 0%,
+    var(--prisma-tangerine) 22%,
+    var(--prisma-rubine) 54%,
+    var(--prisma-fuchsia) 74%,
+    var(--prisma-plum) 100%
+  );
+
+  /* Elevation */
+  --btn-shadow: 0 1px 2px rgba(0,0,0,0.06), 0 2px 6px rgba(0,0,0,0.06);
+  --btn-shadow-hover: 0 2px 4px rgba(0,0,0,0.08), 0 4px 10px rgba(0,0,0,0.08);
+}
+
+/* Dark theme overrides */
+html[data-theme="dark"] {
+  --bg: #0F0F12;
+  --text: #E7E7EC;
+  --muted: #B5B7C2;
+  --panel: #151621;
+  --border: #2A2B34;
+
+  --primary: var(--prisma-rubine);
+  --primary-contrast: #FFFFFF;
+  --primary-hover: #BB1339;
+
+  --secondary: var(--prisma-plum);
+  --secondary-hover: #6A1E5B;
+
+  --success: #29A263;
+  --warning: #D97706;
+  --danger:  #DC2626;
+
+  --info-bg: #17192A;
+  --ok-bg: #11261B;
+  --warn-bg: #2A1D12;
+  --err-bg: #2B161A;
+
+  --focus-ring: rgba(237, 24, 73, 0.30);
+
+  --tab-idle-bg: #1A1B26;
+  --tab-idle-fg: #C9CAD3;
+
+  --phrase-row-bg: #231A23;
+  --phrase-row-bd: #3E2332;
+
+  --composer-bg: #1C1C2A;
+
+  --header-gradient: linear-gradient(
+    96deg,
+    var(--prisma-lemon) 0%,
+    var(--prisma-tangerine) 20%,
+    var(--prisma-rubine) 48%,
+    var(--prisma-fuchsia) 70%,
+    var(--prisma-plum) 100%
+  );
+
+  --btn-shadow: 0 1px 2px rgba(0,0,0,0.35), 0 2px 6px rgba(0,0,0,0.28);
+  --btn-shadow-hover: 0 2px 4px rgba(0,0,0,0.45), 0 4px 10px rgba(0,0,0,0.35);
+}
+
+/* ================================
+   Base & Layout
+   ================================ */
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+header {
+  color: white;
+  padding: 14px 16px;
+  font-size: 18px;
+  font-weight: bold;
+  background: var(--header-gradient);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+/* Floating theme toggle (bottom-right) */
+.theme-fab {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 50;
+}
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--secondary);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.25);
+  box-shadow: var(--btn-shadow);
+  cursor: pointer;
+  transition: background .15s ease, box-shadow .15s ease, transform .02s ease;
+}
+.theme-toggle:hover { background: var(--secondary-hover); box-shadow: var(--btn-shadow-hover); }
+.theme-toggle:active { transform: translateY(1px); }
+
+.container {
+  padding: 16px;
+  max-width: 900px;
+  margin: auto;
+}
+
+/* Tabs — keep horizontal, allow scroll if tight */
+.tabs {
+  display: flex;
+  flex-wrap: nowrap;     /* keep one row */
+  overflow-x: auto;      /* scroll on small screens */
+  border-bottom: 1px solid var(--border);
+}
+.tab {
+  flex: 1 0 auto;        /* equal-ish width, no wrapping */
+  min-width: 120px;
+  padding: 10px;
+  text-align: center;
+  cursor: pointer;
+  background: var(--tab-idle-bg);
+  color: var(--tab-idle-fg);
+  border: 1px solid var(--border);
+  border-bottom: none;
+  transition: background .15s ease, color .15s ease, box-shadow .15s ease;
+  user-select: none;
+}
+.tab:hover { color: var(--text); }
+.tab.active {
+  background: var(--panel);
+  color: var(--text);
+  font-weight: bold;
+  border-bottom: 2px solid var(--primary);
+  box-shadow: 0 2px 0 0 var(--primary);
+}
+
+/* Panels */
+.panel {
+  display: none;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  padding: 16px;
+  border-radius: 8px;
+}
+.panel.active { display: block; }
+
+/* Inputs & controls */
+label {
+  font-weight: bold;
+  display: block;
+  margin-top: 14px;
+}
+input, select, textarea {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 15px;
+  margin-top: 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fff;
+  color: #111827;
+  outline: none;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+html[data-theme="dark"] input,
+html[data-theme="dark"] select,
+html[data-theme="dark"] textarea {
+  background: #0F0F14;
+  color: var(--text);
+  border-color: var(--border);
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+/* Buttons */
+button {
+  margin-top: 16px;
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 16px;
+  background: var(--primary);
+  color: var(--primary-contrast);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background .15s ease, transform .02s ease, box-shadow .15s ease;
+  box-shadow: var(--btn-shadow);
+}
+button:hover { background: var(--primary-hover); box-shadow: var(--btn-shadow-hover); }
+button:active { transform: translateY(1px); }
+
+/* Small/Inline buttons — clearer separation */
+.icon-btn, .mini-btn, .copy-btn {
+  width: auto;
+  padding: 7px 12px;
+  font-size: 14px;
+  border-radius: 10px;
+  margin-top: 0;
+  box-shadow: var(--btn-shadow);
+}
+.icon-btn.add,
+.mini-btn.secondary,
+.copy-btn {
+  background: var(--secondary);
+  color: #fff;
+}
+.icon-btn.add:hover,
+.mini-btn.secondary:hover,
+.copy-btn:hover { background: var(--secondary-hover); box-shadow: var(--btn-shadow-hover); }
+
+.icon-btn.remove {
+  background: var(--danger);
+  color: #fff;
+}
+.icon-btn.remove:hover { background: #991b1b; }
+
+.mini-btn.neutral { background: #6b7280; color:#fff; }
+.mini-btn.neutral:hover { background: #52525b; }
+
+.mini-btn.success { background: var(--success); color:#fff; }
+.mini-btn.success:hover { background: #166534; }
+
+.mini-btn.warn { background: var(--warning); color:#fff; }
+.mini-btn.warn:hover { background: #92400e; }
+
+/* Results */
+.result {
+  background: var(--info-bg);
+  border-left: 6px solid var(--secondary);
+  padding: 12px;
+  margin-top: 18px;
+  line-height: 1.7;
+  border-radius: 8px;
+}
+.result.ok {
+  background: var(--ok-bg);
+  border-left-color: var(--success);
+}
+.result.warning {
+  background: var(--err-bg);
+  border-left-color: var(--danger);
+}
+
+.small {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 10px;
+}
+
+/* Multi-dose rows */
+.dose-rows { margin-top: 6px; }
+.dose-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+.dose-input { flex: 1; }
+
+/* Composer */
+.composer {
+  margin-top: 18px;
+  background: var(--composer-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+}
+.composer-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;               /* ← clearer spacing between buttons */
+  align-items: center;
+  margin-bottom: 8px;      /* space below control row */
+}
+.composer-controls > * {
+  margin-top: 0 !important;
+}
+.composer textarea {
+  width: 100%;
+  margin-top: 6px;
+  font-size: 14px;
+  padding: 10px;
+  border-radius: 8px;
+}
+
+/* Smart Text Phrases */
+.section-header {
+  font-weight: 700;
+  text-decoration: underline;
+  margin: 8px 0 6px 0;
+}
+.phrase {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: var(--phrase-row-bg);
+  border: 1px solid var(--phrase-row-bd);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 6px 0;
+}
+.phrase-text {
+  margin: 0;
+  font-size: 15px;
+}
+.copy-note {
+  font-size: 12px;
+  color: var(--secondary);
+  margin-top: 6px;
+}
+
+/* New: inline action row for Calculate + Clear */
+.action-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+.action-row > * {
+  width: auto;
+}
+
+/* Reduce motion preference */
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
+</style>
+</head>
+
+<body>
+<header>
+  Narcotics Diversion Calculator – Remaining Volume
+</header>
+
+<div class="container">
+  <div class="tabs">
+    <div class="tab active" onclick="showTab(0)">Ketamine</div>
+    <div class="tab" onclick="showTab(1)">Morphine</div>
+    <div class="tab" onclick="showTab(2)">Fentanyl</div>
+    <div class="tab" onclick="showTab(3)">Dilaudid</div>
+    <div class="tab" onclick="showTab(4)">Smart Text Phrases</div>
+  </div>
+
+  <div id="content"></div>
+</div>
+
+<!-- Floating theme button -->
+<div class="theme-fab">
+  <button class="theme-toggle" type="button" id="themeBtn" aria-label="Toggle theme" title="Toggle light/dark">
+    ☀️
+  </button>
+</div>
+
+<script>
+/* ================================
+   Data & State
+   ================================ */
+const meds = [
+  {name:"Ketamine", total:100, vol:20, unit:"mg",  factor:1},
+  {name:"Morphine", total:30,  vol:30, unit:"mg",  factor:1},
+  {name:"Fentanyl", total:2500, vol:50, unit:"mcg", factor:0.001},
+  {name:"Dilaudid (Hydromorphone)", total:25, vol:50, unit:"mg", factor:1}
+];
+
+let currentTab = 0;
+let stateListenersBound = false;
+
+const smartText = {
+  missingMedsHeader: "Missing Medications",
+  missingMedsPhrases: [
+    "Will obtain statement from RN",
+    "Waste default to 0 will coach RN"
+  ],
+  missingInfusionsHeader: "Missing Infusions",
+  missingInfusionsPhrases: [
+    "All mapping is correct, all medication accounted for",
+    "Medication started on new order, All mapping is correct",
+    "No Stopped Action present, all medication accounted for. Will Coach RN"
+  ]
+};
+
+/* ================================
+   Theme Toggle (persisted)
+   ================================ */
+(function initTheme(){
+  const saved = localStorage.getItem("prisma-theme");
+  const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const initial = saved || (prefersDark ? "dark" : "light");
+  setTheme(initial);
+})();
+
+document.getElementById("themeBtn").addEventListener("click", () => {
+  const now = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+  setTheme(now);
+});
+
+function setTheme(mode) {
+  document.documentElement.setAttribute("data-theme", mode);
+  localStorage.setItem("prisma-theme", mode);
+  const btn = document.getElementById("themeBtn");
+  btn.textContent = mode === "dark" ? "🌙" : "☀️";
+  btn.setAttribute("aria-pressed", mode === "dark" ? "true" : "false");
+}
+
+/* ================================
+   Tabs & Rendering
+   ================================ */
+function showTab(idx) {
+  // Persist state for the tab we're leaving (if it's a med tab)
+  try { saveState(); } catch {}
+
+  currentTab = idx;
+  document.querySelectorAll(".tab").forEach((t,i)=>{
+    t.classList.toggle("active", i===idx);
+  });
+  render();
+}
+
+function render() {
+  if (currentTab <= 3) {
+    const m = meds[currentTab];
+    document.getElementById("content").innerHTML = `
+      <div class="panel active">
+        <h3>${m.name}</h3>
+        <div class="small">${m.total} ${m.unit} / ${m.vol} mL</div>
+
+        <!-- Multi-line Total Drug -->
+        <label>Total Drug (${m.unit}) – enter each dose on its own line</label>
+        <div id="doseRows" class="dose-rows"></div>
+        <button class="icon-btn add" onclick="addDoseRow()" type="button">+ Add dose</button>
+
+        <label for="priming">Priming (mL)</label>
+        <input id="priming" type="number" step="0.01" inputmode="decimal">
+
+        <label for="waste">Waste (mL)</label>
+        <input id="waste" type="number" step="0.01" inputmode="decimal">
+
+        <label for="remaining">Measured Remaining (mL)</label>
+        <input id="remaining" type="number" step="0.01" inputmode="decimal">
+
+        <div class="action-row">
+          <button type="button" onclick="calculate()">Calculate</button>
+          <button class="mini-btn neutral" type="button" onclick="clearCalculator()">Clear</button>
+        </div>
+
+        <div id="results"></div>
+
+        <!-- Statement Composer -->
+        <div class="composer">
+          <div class="composer-controls">
+            <button class="mini-btn secondary" type="button" onclick="useNumbersForText()">Use numbers for Text</button>
+            <select id="phraseSelect" aria-label="Smart phrase">
+              ${buildPhraseOptions()}
+            </select>
+            <button class="mini-btn neutral" type="button" onclick="appendSelectedPhrase()">Append selected phrase</button>
+            <button class="mini-btn success" type="button" onclick="copyStatement()">Copy Statement</button>
+            <button class="mini-btn warn" type="button" onclick="clearStatement()">Clear</button>
+          </div>
+          <textarea id="statementBox" rows="4" placeholder="Click 'Use numbers for Text', then append a Smart Text phrase. You can edit this text before copying."></textarea>
+        </div>
+      </div>
+    `;
+
+    // Try to load persisted state first; only seed a blank row if there's no state
+    const loaded = loadState(currentTab); // returns boolean
+    if (!loaded) {
+      addDoseRow(); // no saved state, start with one empty row
+    }
+
+  } else {
+    // Smart Text Phrases tab
+    const mm = smartText.missingMedsPhrases.map(p => phraseRow(p)).join("");
+    const mi = smartText.missingInfusionsPhrases.map(p => phraseRow(p)).join("");
+    document.getElementById("content").innerHTML = `
+      <div class="panel active">
+        <h3>Smart Text Phrases</h3>
+        <div class="section-header">${smartText.missingMedsHeader}</div>
+        ${mm}
+        <div style="height:10px;"></div>
+        <div class="section-header">${smartText.missingInfusionsHeader}</div>
+        ${mi}
+        <div class="copy-note">Tip: Use the “Copy” buttons to quickly paste into Wolters Kluwer Invistics.</div>
+      </div>
+    `;
+  }
+
+  // Bind a single delegated listener to save state on any input/change
+  bindStateListenersOnce();
+}
+
+function bindStateListenersOnce() {
+  if (stateListenersBound) return;
+  const contentEl = document.getElementById("content");
+  ["input","change"].forEach(evt => contentEl.addEventListener(evt, () => {
+    try { saveState(); } catch {}
+  }, true));
+  stateListenersBound = true;
+}
+
+/* ================================
+   Doses (multi-line)
+   ================================ */
+function addDoseRow(value = "") {
+  const rows = document.getElementById("doseRows");
+  const row = document.createElement("div");
+  row.className = "dose-row";
+  row.innerHTML = `
+    <input class="dose-input" type="number" step="0.01" inputmode="decimal" placeholder="e.g., 5" value="${value}">
+    <button class="icon-btn remove" type="button" onclick="removeDoseRow(this)">Remove</button>
+  `;
+  rows.appendChild(row);
+  // persist after change
+  try { saveState(); } catch {}
+}
+
+function removeDoseRow(btn) {
+  const row = btn.closest(".dose-row");
+  const rows = document.getElementById("doseRows");
+  if (rows && row) {
+    rows.removeChild(row);
+    if (rows.children.length === 0) addDoseRow();
+  }
+  // persist after change
+  try { saveState(); } catch {}
+}
+
+function getDoseValues() {
+  const inputs = Array.from(document.querySelectorAll("#doseRows .dose-input"));
+  const nums = inputs.map(i => parseFloat(i.value)).filter(v => !isNaN(v));
+  const display = nums.map(v => stripTrailingZeros(v)).join("+");
+  const sumUnits = nums.reduce((a,b) => a + b, 0);
+  return { list: nums, display, sumUnits };
+}
+
+function stripTrailingZeros(n) {
+  const s = Number(n).toFixed(2);
+  return s.indexOf('.') >= 0 ? s.replace(/\.?0+$/,'') : s;
+}
+
+/* ================================
+   Calculator
+   ================================ */
+function calculate(){
+  const m = meds[currentTab];
+  const mgPerMl = (m.total * m.factor) / m.vol;
+
+  const { sumUnits } = getDoseValues();
+  const deliveredMg = sumUnits * m.factor;
+
+  const priming = parseFloat(document.getElementById("priming").value || 0);
+  const waste = parseFloat(document.getElementById("waste").value || 0);
+  const remaining = parseFloat(document.getElementById("remaining").value || 0);
+
+  const primingMg = priming * mgPerMl;
+  const wasteMg = waste * mgPerMl;
+
+  const accounted = deliveredMg + primingMg + wasteMg; // mg accounted
+  const expectedMg = (m.total * m.factor) - accounted;
+  const expectedMl = expectedMg / mgPerMl;
+
+  const actualMg = remaining * mgPerMl;
+  const diffMg = actualMg - expectedMg;
+  const diffMl = remaining - expectedMl;
+
+  const flag = Math.abs(diffMg) > 5 || Math.abs(diffMl) > 1;
+
+  document.getElementById("results").innerHTML = `
+    <div class="result ${flag ? "warning" : "ok"}" role="status" aria-live="polite">
+      <strong>Remaining vs Expected</strong><br>
+      <b>Expected:</b> ${expectedMl.toFixed(2)} mL (${expectedMg.toFixed(2)} mg)<br>
+      <b>Entered:</b> ${remaining.toFixed(2)} mL (${actualMg.toFixed(2)} mg)<br>
+      <b>Discrepancy:</b> ${diffMl.toFixed(2)} mL (${diffMg.toFixed(2)} mg)<br><br>
+      <b>Recommendation:</b><br>
+      ${flag ? 
+        "Recommend getting statement from RNs involved in medication administration" :
+        "No action required"}
+    </div>
+  `;
+
+  // persist after calculation in case anything was auto-corrected later
+  try { saveState(); } catch {}
+}
+
+/* Clear the calculator inputs/results (not the Smart Text list tab) */
+function clearCalculator() {
+  const rows = document.getElementById("doseRows");
+  if (rows) {
+    rows.innerHTML = "";
+    addDoseRow();
+  }
+  ["priming","waste","remaining"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = "";
+  });
+  const res = document.getElementById("results");
+  if (res) res.innerHTML = "";
+  // persist cleared state
+  try { saveState(); } catch {}
+}
+
+/* ================================
+   Statement Builder (missing/overage)
+   ================================ */
+function useNumbersForText() {
+  const m = meds[currentTab];
+  const mgPerMl = (m.total * m.factor) / m.vol;
+
+  const { display, sumUnits } = getDoseValues();
+  const deliveredMg = sumUnits * m.factor;
+
+  const priming = parseFloat(document.getElementById("priming").value || 0);
+  const waste = parseFloat(document.getElementById("waste").value || 0);
+  const remaining = parseFloat(document.getElementById("remaining").value || 0);
+
+  const primingMg = priming * mgPerMl;
+  const wasteMg  = waste  * mgPerMl;
+
+  // Accounted = delivered + priming + waste (mg)
+  const accountedMg = deliveredMg + primingMg + wasteMg;
+  const accountedInMedUnits = (m.factor !== 0) ? (accountedMg / m.factor) : accountedMg;
+
+  // Expected vs actual remaining
+  const expectedMg = (m.total * m.factor) - accountedMg;
+  const expectedMl = expectedMg / mgPerMl;
+  const actualMg   = remaining * mgPerMl;
+
+  const diffMg = actualMg - expectedMg; // + = overage, - = missing
+  const diffMl = remaining - expectedMl;
+
+  // Discrepancy wording
+  const epsMl = 0.005, epsMg = 0.05;
+  let discrepancyText = ", no discrepancy";
+  if (diffMl < -epsMl || diffMg < -epsMg) {
+    const missMl = Math.abs(diffMl);
+    const missMg = Math.abs(diffMg);
+    discrepancyText = `, missing ${stripTrailingZeros(missMl)} mL (${missMg.toFixed(2)} mg)`;
+  } else if (diffMl > epsMl || diffMg > epsMg) {
+    const overMl = Math.abs(diffMl);
+    const overMg = Math.abs(diffMg);
+    discrepancyText = `, over by ${stripTrailingZeros(overMl)} mL (${overMg.toFixed(2)} mg)`;
+  }
+
+  const parts = [];
+  if (display) parts.push(`Total drug ${display}`);
+  parts.push(`waste ${stripTrailingZeros(waste)} mL (${wasteMg.toFixed(2)} mg)`);
+  if (priming > 0) parts.push(`priming ${stripTrailingZeros(priming)} mL (${primingMg.toFixed(2)} mg)`);
+  parts.push(`remaining amount ${stripTrailingZeros(remaining)} mL`);
+  parts.push(`— which equals ${accountedMg.toFixed(2)} mg${m.factor !== 1 ? ` (${accountedInMedUnits.toFixed(2)} ${m.unit})` : ""}${discrepancyText}`);
+
+  const text = parts.join(" ");
+
+  const box = document.getElementById("statementBox");
+  box.value = text;
+  box.focus();
+  box.setSelectionRange(box.value.length, box.value.length);
+
+  // persist statement update
+  try { saveState(); } catch {}
+}
+
+function buildPhraseOptions() {
+  const mm = smartText.missingMedsPhrases.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join("");
+  const mi = smartText.missingInfusionsPhrases.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join("");
+  return `
+    <optgroup label="${escapeHtml(smartText.missingMedsHeader)}">
+      ${mm}
+    </optgroup>
+    <optgroup label="${escapeHtml(smartText.missingInfusionsHeader)}">
+      ${mi}
+    </optgroup>
+  `;
+}
+
+function appendSelectedPhrase() {
+  const sel = document.getElementById("phraseSelect");
+  const phrase = sel.value || "";
+  const box = document.getElementById("statementBox");
+  if (!phrase) return;
+  const sep = box.value && !box.value.endsWith(" ") ? " " : "";
+  box.value = (box.value || "") + sep + phrase;
+  box.focus();
+  box.setSelectionRange(box.value.length, box.value.length);
+
+  // persist statement update
+  try { saveState(); } catch {}
+}
+
+async function copyStatement() {
+  const text = document.getElementById("statementBox").value.trim();
+  if (!text) return;
+  try {
+    await navigator.clipboard.writeText(text);
+    alert("Statement copied to clipboard.");
+  } catch {
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'absolute';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); alert("Statement copied to clipboard."); }
+    catch { alert("Copy failed. Please select the text and copy manually."); }
+    document.body.removeChild(ta);
+  }
+}
+
+function clearStatement() {
+  const el = document.getElementById("statementBox");
+  if (el) el.value = "";
+  // persist cleared statement
+  try { saveState(); } catch {}
+}
+
+/* ================================
+   Smart Text Utils
+   ================================ */
+function phraseRow(text) {
+  const safeText = escapeHtml(text);
+  const jsArg = JSON.stringify(text);
+  return `
+    <div class="phrase">
+      <p class="phrase-text">${safeText}</p>
+      <button class="copy-btn" onclick='copyPhrase(${jsArg}, this)' aria-label="Copy phrase">Copy</button>
+    </div>
+  `;
+}
+
+async function copyPhrase(text, btnEl) {
+  try {
+    await navigator.clipboard.writeText(text);
+    flashButton(btnEl, "Copied!");
+  } catch {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'absolute';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); flashButton(btnEl, "Copied!"); }
+    catch { flashButton(btnEl, "Failed"); }
+    document.body.removeChild(ta);
+  }
+}
+
+function flashButton(btnEl, msg) {
+  const original = btnEl.textContent;
+  btnEl.textContent = msg;
+  btnEl.disabled = true;
+  setTimeout(() => {
+    btnEl.textContent = original;
+    btnEl.disabled = false;
+  }, 1100);
+}
+
+function escapeHtml(str){
+  return String(str)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+/* ================================
+   Persistence (per-tab state)
+   ================================ */
+function saveState() {
+  // Only persist for med tabs with calculator fields
+  if (currentTab > 3) return;
+  const { list } = getDoseValues();
+  const st = {
+    doses: list,
+    priming: document.getElementById("priming")?.value || "",
+    waste: document.getElementById("waste")?.value || "",
+    remaining: document.getElementById("remaining")?.value || "",
+    statement: document.getElementById("statementBox")?.value || ""
+  };
+  localStorage.setItem(`med-state-${currentTab}`, JSON.stringify(st));
+}
+
+/**
+ * Load per-tab state. Returns true if a saved state was loaded.
+ */
+function loadState(tabIdx) {
+  const raw = localStorage.getItem(`med-state-${tabIdx}`);
+  if (!raw) return false;
+  try {
+    const st = JSON.parse(raw);
+    // restore doses
+    const rows = document.getElementById("doseRows");
+    if (rows) {
+      rows.innerHTML = "";
+      if (Array.isArray(st.doses) && st.doses.length) {
+        st.doses.forEach(v => addDoseRow(String(v)));
+      } else {
+        // If doses stored but empty, fall back to one blank row
+        addDoseRow();
+      }
+    }
+    const primingEl = document.getElementById("priming");
+    const wasteEl = document.getElementById("waste");
+    const remainingEl = document.getElementById("remaining");
+    if (primingEl) primingEl.value = st.priming ?? "";
+    if (wasteEl) wasteEl.value = st.waste ?? "";
+    if (remainingEl) remainingEl.value = st.remaining ?? "";
+    const sb = document.getElementById("statementBox");
+    if (sb) sb.value = st.statement ?? "";
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/* Init */
+render();
+</script>
+</body>
+</html>
