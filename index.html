@@ -403,11 +403,12 @@ button:active { transform: translateY(1px); }
 
 <div class="container">
   <div class="tabs">
-    <div class="tab active" onclick="showTab(0)">Ketamine</div>
-    <div class="tab" onclick="showTab(1)">Morphine</div>
-    <div class="tab" onclick="showTab(2)">Fentanyl</div>
-    <div class="tab" onclick="showTab(3)">Dilaudid</div>
-    <div class="tab" onclick="showTab(4)">Smart Text Phrases</div>
+    <div class="tab active" onclick="showTab(0)">Ketamine 200/20</div>
+    <div class="tab" onclick="showTab(1)">Ketamine 100/20</div>
+    <div class="tab" onclick="showTab(2)">Morphine</div>
+    <div class="tab" onclick="showTab(3)">Fentanyl</div>
+    <div class="tab" onclick="showTab(4)">Dilaudid</div>
+    <div class="tab" onclick="showTab(5)">Smart Text Phrases</div>
   </div>
 
   <div id="content"></div>
@@ -425,7 +426,8 @@ button:active { transform: translateY(1px); }
    Data & State
    ================================ */
 const meds = [
-  {name:"Ketamine", total:200, vol:20, unit:"mg",  factor:1},
+  {name:"Ketamine (200 mg/20 mL)", total:200, vol:20, unit:"mg",  factor:1},
+  {name:"Ketamine (100 mg/20 mL)", total:100, vol:20, unit:"mg",  factor:1},
   {name:"Morphine", total:30,  vol:30, unit:"mg",  factor:1},
   {name:"Fentanyl", total:2500, vol:50, unit:"mcg", factor:0.001},
   {name:"Dilaudid (Hydromorphone)", total:25, vol:50, unit:"mg", factor:1}
@@ -486,7 +488,7 @@ function showTab(idx) {
 }
 
 function render() {
-  if (currentTab <= 3) {
+  if (currentTab <= 4) {
     const m = meds[currentTab];
     document.getElementById("content").innerHTML = `
       <div class="panel active">
@@ -838,7 +840,7 @@ function escapeHtml(str){
    ================================ */
 function saveState() {
   // Only persist for med tabs with calculator fields
-  if (currentTab > 3) return;
+  if (currentTab > 4) return;
   const { list } = getDoseValues();
   const st = {
     doses: list,
