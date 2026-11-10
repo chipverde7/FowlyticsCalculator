@@ -7,20 +7,20 @@
 
 <style>
 /* ================================
-   Prisma Health Color System
+   Color System
    ================================ */
 :root {
-  /* Prisma brand swatches (from your guide) */
-  --prisma-lemon:   #FFD600; /* Lemon */
-  --prisma-tangerine:#F99B1C; /* Tangerine */
-  --prisma-apricot: #F15F22; /* Apricot */
-  --prisma-rubine:  #ED1849; /* Rubine */
-  --prisma-fuchsia: #EC008C; /* Fuchsia */
-  --prisma-plum:    #832B72; /* Plum */
-  --prisma-eggplant:#3B0065; /* Eggplant */
-  --prisma-85black: #262626; /* 85% Black */
-  --prisma-black:   #000000; /* Black */
-  --prisma-white:   #FFFFFF; /* White */
+  /* Brand swatches */
+  --brand-lemon:   #FFD600; /* Lemon */
+  --brand-tangerine:#F99B1C; /* Tangerine */
+  --brand-apricot: #F15F22; /* Apricot */
+  --brand-rubine:  #ED1849; /* Rubine */
+  --brand-fuchsia: #EC008C; /* Fuchsia */
+  --brand-plum:    #832B72; /* Plum */
+  --brand-eggplant:#3B0065; /* Eggplant */
+  --brand-85black: #262626; /* 85% Black */
+  --brand-black:   #000000; /* Black */
+  --brand-white:   #FFFFFF; /* White */
 
   /* Light theme tokens */
   --bg: #FAFBFC;
@@ -29,11 +29,11 @@
   --panel: #FFFFFF;
   --border: #E5E7EB;
 
-  --primary: var(--prisma-rubine);
+  --primary: var(--brand-rubine);
   --primary-contrast: #FFFFFF;
   --primary-hover: #D11541;
 
-  --secondary: var(--prisma-plum);
+  --secondary: var(--brand-plum);
   --secondary-hover: #6E215F;
 
   --success: #1C7C3E;
@@ -57,11 +57,11 @@
 
   --header-gradient: linear-gradient(
     96deg,
-    var(--prisma-lemon) 0%,
-    var(--prisma-tangerine) 22%,
-    var(--prisma-rubine) 54%,
-    var(--prisma-fuchsia) 74%,
-    var(--prisma-plum) 100%
+    var(--brand-lemon) 0%,
+    var(--brand-tangerine) 22%,
+    var(--brand-rubine) 54%,
+    var(--brand-fuchsia) 74%,
+    var(--brand-plum) 100%
   );
 
   /* Elevation */
@@ -77,11 +77,11 @@ html[data-theme="dark"] {
   --panel: #151621;
   --border: #2A2B34;
 
-  --primary: var(--prisma-rubine);
+  --primary: var(--brand-rubine);
   --primary-contrast: #FFFFFF;
   --primary-hover: #BB1339;
 
-  --secondary: var(--prisma-plum);
+  --secondary: var(--brand-plum);
   --secondary-hover: #6A1E5B;
 
   --success: #29A263;
@@ -105,11 +105,11 @@ html[data-theme="dark"] {
 
   --header-gradient: linear-gradient(
     96deg,
-    var(--prisma-lemon) 0%,
-    var(--prisma-tangerine) 20%,
-    var(--prisma-rubine) 48%,
-    var(--prisma-fuchsia) 70%,
-    var(--prisma-plum) 100%
+    var(--brand-lemon) 0%,
+    var(--brand-tangerine) 20%,
+    var(--brand-rubine) 48%,
+    var(--brand-fuchsia) 70%,
+    var(--brand-plum) 100%
   );
 
   --btn-shadow: 0 1px 2px rgba(0,0,0,0.35), 0 2px 6px rgba(0,0,0,0.28);
@@ -425,16 +425,21 @@ button:active { transform: translateY(1px); }
 /* ================================
    Data & State
    ================================ */
+// flagMl / flagUnits: per-med discrepancy flag thresholds. flagUnits is the
+// amount of drug in flagMl mL at that med's concentration, so both arms of the
+// flag test agree for every med (previously one global 5 mg rule was
+// unreachable for fentanyl and ~20x stricter for concentrated ketamine).
 const meds = [
-  {name:"Ketamine (200 mg/20 mL)", total:200, vol:20, unit:"mg",  factor:1},
-  {name:"Ketamine (100 mg/20 mL)", total:100, vol:20, unit:"mg",  factor:1},
-  {name:"Morphine", total:30,  vol:30, unit:"mg",  factor:1},
-  {name:"Fentanyl", total:2500, vol:50, unit:"mcg", factor:0.001},
-  {name:"Dilaudid (Hydromorphone)", total:25, vol:50, unit:"mg", factor:1}
+  {name:"Ketamine (200 mg/20 mL)", total:200, vol:20, unit:"mg",  factor:1,     flagMl:0.5, flagUnits:5},
+  {name:"Ketamine (100 mg/20 mL)", total:100, vol:20, unit:"mg",  factor:1,     flagMl:1,   flagUnits:5},
+  {name:"Morphine", total:30,  vol:30, unit:"mg",  factor:1,     flagMl:1,   flagUnits:1},
+  {name:"Fentanyl", total:2500, vol:50, unit:"mcg", factor:0.001, flagMl:1,   flagUnits:50},
+  {name:"Dilaudid (Hydromorphone)", total:25, vol:50, unit:"mg", factor:1,     flagMl:1,   flagUnits:0.5}
 ];
 
 let currentTab = 0;
 let stateListenersBound = false;
+let restoringState = false; // true while loadState() rebuilds the panel; saveState() is a no-op then
 
 const smartText = {
   missingMedsHeader: "Missing Medications",
@@ -454,7 +459,7 @@ const smartText = {
    Theme Toggle (persisted)
    ================================ */
 (function initTheme(){
-  const saved = localStorage.getItem("prisma-theme");
+  const saved = localStorage.getItem("ndc-theme");
   const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
   const initial = saved || (prefersDark ? "dark" : "light");
   setTheme(initial);
@@ -467,7 +472,7 @@ document.getElementById("themeBtn").addEventListener("click", () => {
 
 function setTheme(mode) {
   document.documentElement.setAttribute("data-theme", mode);
-  localStorage.setItem("prisma-theme", mode);
+  localStorage.setItem("ndc-theme", mode);
   const btn = document.getElementById("themeBtn");
   btn.textContent = mode === "dark" ? "🌙" : "☀️";
   btn.setAttribute("aria-pressed", mode === "dark" ? "true" : "false");
@@ -611,38 +616,57 @@ function stripTrailingZeros(n) {
 /* ================================
    Calculator
    ================================ */
+/* ================================
+   Shared calculation (single source of truth)
+   calculate() and useNumbersForText() both render from computeCase(),
+   so the result box and the statement can never disagree again.
+   ================================ */
+function readInputs(){
+  const { display, sumUnits } = getDoseValues();
+  return {
+    display,
+    sumUnits,
+    priming: parseFloat(document.getElementById("priming").value || 0),
+    waste: parseFloat(document.getElementById("waste").value || 0),
+    remaining: parseFloat(document.getElementById("remaining").value || 0)
+  };
+}
+
+function computeCase(m, inp){
+  const mgPerMl = (m.total * m.factor) / m.vol;
+  const deliveredMg = inp.sumUnits * m.factor;
+  const primingMg = inp.priming * mgPerMl;
+  const wasteMg = inp.waste * mgPerMl;
+  const accountedMg = deliveredMg + primingMg + wasteMg;
+  const expectedMg = (m.total * m.factor) - accountedMg;
+  const expectedMl = expectedMg / mgPerMl;
+  const actualMg = inp.remaining * mgPerMl;
+  const diffMg = actualMg - expectedMg;
+  const diffMl = inp.remaining - expectedMl;
+  const diffUnits = diffMg / m.factor; // discrepancy in the med's native unit
+  const flag = Math.abs(diffMl) > m.flagMl || Math.abs(diffUnits) > m.flagUnits;
+  const epsMl = 0.005, epsMg = 0.05;
+  let classification = "none";
+  if (diffMl < -epsMl || diffMg < -epsMg) classification = "missing";
+  else if (diffMl > epsMl || diffMg > epsMg) classification = "over";
+  return { mgPerMl, deliveredMg, primingMg, wasteMg, accountedMg, expectedMg,
+           expectedMl, actualMg, diffMg, diffMl, diffUnits, flag, classification,
+           priming: inp.priming, waste: inp.waste, remaining: inp.remaining,
+           display: inp.display, sumUnits: inp.sumUnits };
+}
+
 function calculate(){
   const m = meds[currentTab];
-  const mgPerMl = (m.total * m.factor) / m.vol;
-
-  const { sumUnits } = getDoseValues();
-  const deliveredMg = sumUnits * m.factor;
-
-  const priming = parseFloat(document.getElementById("priming").value || 0);
-  const waste = parseFloat(document.getElementById("waste").value || 0);
-  const remaining = parseFloat(document.getElementById("remaining").value || 0);
-
-  const primingMg = priming * mgPerMl;
-  const wasteMg = waste * mgPerMl;
-
-  const accounted = deliveredMg + primingMg + wasteMg; // mg accounted
-  const expectedMg = (m.total * m.factor) - accounted;
-  const expectedMl = expectedMg / mgPerMl;
-
-  const actualMg = remaining * mgPerMl;
-  const diffMg = actualMg - expectedMg;
-  const diffMl = remaining - expectedMl;
-
-  const flag = Math.abs(diffMg) > 5 || Math.abs(diffMl) > 1;
+  const c = computeCase(m, readInputs());
 
   document.getElementById("results").innerHTML = `
-    <div class="result ${flag ? "warning" : "ok"}" role="status" aria-live="polite">
+    <div class="result ${c.flag ? "warning" : "ok"}" role="status" aria-live="polite">
       <strong>Remaining vs Expected</strong><br>
-      <b>Expected:</b> ${expectedMl.toFixed(2)} mL (${expectedMg.toFixed(2)} mg)<br>
-      <b>Entered:</b> ${remaining.toFixed(2)} mL (${actualMg.toFixed(2)} mg)<br>
-      <b>Discrepancy:</b> ${diffMl.toFixed(2)} mL (${diffMg.toFixed(2)} mg)<br><br>
+      <b>Expected:</b> ${c.expectedMl.toFixed(2)} mL (${c.expectedMg.toFixed(2)} mg)<br>
+      <b>Entered:</b> ${c.remaining.toFixed(2)} mL (${c.actualMg.toFixed(2)} mg)<br>
+      <b>Discrepancy:</b> ${c.diffMl.toFixed(2)} mL (${c.diffMg.toFixed(2)} mg)<br><br>
       <b>Recommendation:</b><br>
-      ${flag ? 
+      ${c.flag ?
         "Recommend getting statement from RNs involved in medication administration" :
         "No action required"}
     </div>
@@ -674,49 +698,24 @@ function clearCalculator() {
    ================================ */
 function useNumbersForText() {
   const m = meds[currentTab];
-  const mgPerMl = (m.total * m.factor) / m.vol;
+  const c = computeCase(m, readInputs());
 
-  const { display, sumUnits } = getDoseValues();
-  const deliveredMg = sumUnits * m.factor;
+  const accountedInMedUnits = (m.factor !== 0) ? (c.accountedMg / m.factor) : c.accountedMg;
 
-  const priming = parseFloat(document.getElementById("priming").value || 0);
-  const waste = parseFloat(document.getElementById("waste").value || 0);
-  const remaining = parseFloat(document.getElementById("remaining").value || 0);
-
-  const primingMg = priming * mgPerMl;
-  const wasteMg  = waste  * mgPerMl;
-
-  // Accounted = delivered + priming + waste (mg)
-  const accountedMg = deliveredMg + primingMg + wasteMg;
-  const accountedInMedUnits = (m.factor !== 0) ? (accountedMg / m.factor) : accountedMg;
-
-  // Expected vs actual remaining
-  const expectedMg = (m.total * m.factor) - accountedMg;
-  const expectedMl = expectedMg / mgPerMl;
-  const actualMg   = remaining * mgPerMl;
-
-  const diffMg = actualMg - expectedMg; // + = overage, - = missing
-  const diffMl = remaining - expectedMl;
-
-  // Discrepancy wording
-  const epsMl = 0.005, epsMg = 0.05;
+  // Discrepancy wording comes from the same classification as calculate()
   let discrepancyText = ", no discrepancy";
-  if (diffMl < -epsMl || diffMg < -epsMg) {
-    const missMl = Math.abs(diffMl);
-    const missMg = Math.abs(diffMg);
-    discrepancyText = `, missing ${stripTrailingZeros(missMl)} mL (${missMg.toFixed(2)} mg)`;
-  } else if (diffMl > epsMl || diffMg > epsMg) {
-    const overMl = Math.abs(diffMl);
-    const overMg = Math.abs(diffMg);
-    discrepancyText = `, over by ${stripTrailingZeros(overMl)} mL (${overMg.toFixed(2)} mg)`;
+  if (c.classification === "missing") {
+    discrepancyText = `, missing ${stripTrailingZeros(Math.abs(c.diffMl))} mL (${Math.abs(c.diffMg).toFixed(2)} mg)`;
+  } else if (c.classification === "over") {
+    discrepancyText = `, over by ${stripTrailingZeros(Math.abs(c.diffMl))} mL (${Math.abs(c.diffMg).toFixed(2)} mg)`;
   }
 
   const parts = [];
-  if (display) parts.push(`Total drug ${display}`);
-  parts.push(`waste ${stripTrailingZeros(waste)} mL (${wasteMg.toFixed(2)} mg)`);
-  if (priming > 0) parts.push(`priming ${stripTrailingZeros(priming)} mL (${primingMg.toFixed(2)} mg)`);
-  parts.push(`remaining amount ${stripTrailingZeros(remaining)} mL`);
-  parts.push(`— which equals ${accountedMg.toFixed(2)} mg${m.factor !== 1 ? ` (${accountedInMedUnits.toFixed(2)} ${m.unit})` : ""}${discrepancyText}`);
+  if (c.display) parts.push(`Total drug ${c.display}`);
+  parts.push(`waste ${stripTrailingZeros(c.waste)} mL (${c.wasteMg.toFixed(2)} mg)`);
+  if (c.priming > 0) parts.push(`priming ${stripTrailingZeros(c.priming)} mL (${c.primingMg.toFixed(2)} mg)`);
+  parts.push(`remaining amount ${stripTrailingZeros(c.remaining)} mL`);
+  parts.push(`— which equals ${c.accountedMg.toFixed(2)} mg${m.factor !== 1 ? ` (${accountedInMedUnits.toFixed(2)} ${m.unit})` : ""}${discrepancyText}`);
 
   const text = parts.join(" ");
 
@@ -839,6 +838,7 @@ function escapeHtml(str){
    Persistence (per-tab state)
    ================================ */
 function saveState() {
+  if (restoringState) return; // never persist a half-restored panel
   // Only persist for med tabs with calculator fields
   if (currentTab > 4) return;
   const { list } = getDoseValues();
@@ -858,6 +858,7 @@ function saveState() {
 function loadState(tabIdx) {
   const raw = localStorage.getItem(`med-state-${tabIdx}`);
   if (!raw) return false;
+  restoringState = true; // addDoseRow() below calls saveState(); block it until restore completes
   try {
     const st = JSON.parse(raw);
     // restore doses
@@ -879,8 +880,11 @@ function loadState(tabIdx) {
     if (remainingEl) remainingEl.value = st.remaining ?? "";
     const sb = document.getElementById("statementBox");
     if (sb) sb.value = st.statement ?? "";
+    restoringState = false;
+    saveState(); // persist the fully restored snapshot once
     return true;
   } catch {
+    restoringState = false;
     return false;
   }
 }
